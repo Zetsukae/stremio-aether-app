@@ -1,10 +1,10 @@
 {
-  "name": "stremio-horizon-app",
+  "name": "stremio-aether-app",
   "private": true,
-  "version": "0.3.2",
+  "version": "1.0.0",
   "scripts": {
     "tauri": "tauri",
-    "build:web": "cd ../stremio-horizon && pnpm run build && rm -rf ../stremio-horizon-app/dist && mkdir -p ../stremio-horizon-app/dist && cp -r build/. ../stremio-horizon-app/dist/",
+    "build:web": "cd ../stremio-horizon && pnpm run build && rm -rf ../stremio-aether-app/dist && mkdir -p ../stremio-aether-app/dist && cp -r build/. ../stremio-aether-app/dist/",
     "dev": "pnpm tauri dev",
     "build": "pnpm build:web && pnpm tauri build"
   },

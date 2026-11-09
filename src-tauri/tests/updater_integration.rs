@@ -6,7 +6,7 @@
 //! can be redirected at runtime through our public API.
 
 use std::sync::Mutex;
-use stremio_horizon_app_lib::{snapshot_pending, UpdateState};
+use stremio_aether_app_lib::{snapshot_pending, UpdateState};
 
 #[test]
 fn snapshot_pending_is_none_on_default_state() {

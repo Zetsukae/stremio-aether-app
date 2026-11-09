@@ -4,10 +4,23 @@ use tauri::{AppHandle, Manager};
 
 const CONFIG_FILE: &str = "config.json";
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CloseButtonPosition {
+    Left,
+    Center,
+    #[default]
+    Right,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default = "default_true")]
     pub auto_update: bool,
+    #[serde(default = "default_true")]
+    pub titlebar: bool,
+    #[serde(default)]
+    pub titlebar_close_button: CloseButtonPosition,
 }
 
 fn default_true() -> bool {
@@ -16,8 +29,48 @@ fn default_true() -> bool {
 
 impl Default for Config {
     fn default() -> Self {
-        Self { auto_update: true }
+        Self {
+            auto_update: true,
+            titlebar: true,
+            titlebar_close_button: CloseButtonPosition::Right,
+        }
     }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TitlebarSettings {
+    enabled: bool,
+    close_button: CloseButtonPosition,
+}
+
+#[tauri::command]
+pub fn get_titlebar_settings(app: AppHandle) -> TitlebarSettings {
+    let config = load(&app);
+    TitlebarSettings {
+        enabled: config.titlebar,
+        close_button: config.titlebar_close_button,
+    }
+}
+
+#[tauri::command]
+pub fn set_titlebar_close_button(app: AppHandle, position: CloseButtonPosition) -> Result<(), String> {
+    let mut config = load(&app);
+    config.titlebar_close_button = position;
+    save(&app, &config)
+}
+
+#[tauri::command]
+pub fn set_titlebar_enabled(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut config = load(&app);
+    config.titlebar = enabled;
+    save(&app, &config)?;
+    if let Some(window) = app.get_webview_window("main") {
+        window
+            .set_decorations(!enabled)
+            .map_err(|e| format!("set decorations: {e}"))?;
+    }
+    Ok(())
 }
 
 pub fn load(app: &AppHandle) -> Config {

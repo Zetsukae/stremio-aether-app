@@ -1,17 +1,20 @@
-# Stremio Horizon App
+# Stremio Aether
 
-> [!IMPORTANT]
-> **This project is archived and no longer maintained.**
->
-> I no longer have the time to develop Stremio Horizon, and [Nuvio](https://nuvio.tv) has recently become the best alternative to it. It shares a philosophy very close to mine, so there is no point in keeping this project going.
->
-> If you liked Horizon, go check out [Nuvio](https://nuvio.tv) ([source](https://github.com/tapframe/NuvioStreaming)). The code here stays available as-is, and the last desktop build remains downloadable from the [releases page](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest).
+Desktop app for Stremio built with [Tauri](https://tauri.app). Stremio Aether is a fork of [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon-app), maintained by Zetsukae.
 
-Desktop app for [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon), built with [Tauri](https://tauri.app).
+It bundles the Stremio Horizon web UI with a [forked stremio-service](https://github.com/Aqu1tain/stremio-service) for local streaming.
 
-Bundles the Stremio Horizon web UI with a [forked stremio-service](https://github.com/Aqu1tain/stremio-service) for local streaming.
+> This is not a replacement for [Stremio](https://www.stremio.com). Go star Stremio!
 
-> This is not a replacement for [Stremio](https://www.stremio.com) — just a personal take on what a great UI could look like. Go star Stremio!
+## Changes compared to Stremio Horizon
+
+- Custom title bar on desktop, with the close button on the right, left or center (Settings > Interface)
+- Mobile bottom pill navigation (Home, Discover, Library, Downloads, Calendar, Search) that replaces the vertical navigation bar. Addons are reachable from the user menu on mobile
+- Desktop search is part of the top navigation pill
+- Native VLC playback on macOS, Windows and Linux, with resume, progress sync and language and subtitle preferences passed to VLC
+- Native Discord Rich Presence
+- Download manager with resumable transfers and offline HLS playback
+- About page notes the fork and its maintainer
 
 ## Download
 
@@ -21,14 +24,14 @@ Bundles the Stremio Horizon web UI with a [forked stremio-service](https://githu
 | Linux (x64) | [.AppImage / .deb](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) |
 | Windows (x64) | [.msi / .exe](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) |
 
-Can't find the download? Head to the [latest release](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) page directly.
+Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 ### macOS: app is damaged / can't be opened
 
 macOS quarantines apps downloaded outside the App Store. If you get a warning, run:
 
 ```bash
-sudo xattr -rd com.apple.quarantine /Applications/Stremio\ Horizon.app
+sudo xattr -rd com.apple.quarantine /Applications/Stremio\ Aether.app
 ```
 
 ## How it works
@@ -42,19 +45,19 @@ Tauri serves the frontend over `localhost` and spawns `stremio-service` as a sid
 - [Rust](https://rustup.rs)
 - [pnpm](https://pnpm.io) 10+
 - [Node.js](https://nodejs.org) 20+
-- [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon) cloned as a sibling directory (`../stremio-web`)
+- The Stremio Horizon web UI cloned as a sibling directory (`../stremio-horizon`), since the build copies its output from there
 
 ### Setup
 
-1. Clone the repo:
+1. Clone the repos:
 
 ```bash
-git clone https://github.com/Aqu1tain/stremio-horizon-app
-cd stremio-horizon-app
+git clone https://github.com/Aqu1tain/stremio-horizon-app ../stremio-horizon
+cd stremio-aether-app
 pnpm install
 ```
 
-2. Place stremio-service binaries in `src-tauri/binaries/`:
+2. Place stremio-service binaries in `src-tauri/binaries/`.
 
 The fork is source-only, so build it at the tag the release workflow uses:
 
@@ -69,7 +72,7 @@ Copy `target/release/stremio-service` and everything in `resources/bin/<os>/` (`
 3. Run in development mode:
 
 ```bash
-pnpm tauri dev
+pnpm dev
 ```
 
 ### Build
@@ -78,17 +81,17 @@ pnpm tauri dev
 pnpm build
 ```
 
-Produces a `.dmg` (macOS), `.AppImage` / `.deb` (Linux), or `.msi` / `.exe` (Windows) in `src-tauri/target/release/bundle/`.
+This builds the web UI from `../stremio-horizon` into `dist/`, then packages the app. Output goes to `src-tauri/target/release/bundle/`: `.dmg` (macOS), `.AppImage` / `.deb` (Linux) or `.msi` / `.exe` (Windows).
 
 ## Related repos
 
-- [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon) — frontend
-- [stremio-service (fork)](https://github.com/Aqu1tain/stremio-service) — streaming backend
+- [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon-app): web UI this app is based on
+- [stremio-service (fork)](https://github.com/Aqu1tain/stremio-service): streaming backend
 
 ## Credits
 
-Built on top of [stremio-service](https://github.com/Stremio/stremio-service) by [Smart Code](https://www.stremio.com) and [stremio-web](https://github.com/Stremio/stremio-web). Original code is licensed under GPL-2.0.
+Built on top of [stremio-service](https://github.com/Stremio/stremio-service) by [Smart Code](https://www.stremio.com) and [stremio-web](https://github.com/Stremio/stremio-web), and on Stremio Horizon by Aqu1tain.
 
 ## License
 
-GPL-2.0 — see [LICENSE.md](LICENSE.md).
+GPL-2.0. See [LICENSE.md](LICENSE.md).

@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
 // This is the existing Stremio Discord application. Activity::name overrides the
-// displayed activity name so the fork is identified as Stremio Horizon.
+// displayed activity name so the fork is identified as Stremio Aether.
 const DISCORD_CLIENT_ID: &str = "997798118185771059";
 
 #[derive(Default)]
@@ -59,7 +59,7 @@ impl DiscordManager {
     fn set_activity(&self, request: &DiscordActivityRequest) -> Result<(), String> {
         self.with_client(|client| {
             let mut activity = Activity::new()
-                .name("Stremio Horizon")
+                .name("Stremio Aether")
                 .activity_type(ActivityType::Watching)
                 .state(request.state.trim())
                 .details(request.details.trim());

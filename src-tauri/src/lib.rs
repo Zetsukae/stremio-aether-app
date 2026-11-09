@@ -146,6 +146,9 @@ pub fn run() {
             updater::get_pending_update,
             updater::get_auto_update_enabled,
             updater::set_auto_update_enabled,
+            config::get_titlebar_settings,
+            config::set_titlebar_enabled,
+            config::set_titlebar_close_button,
             discord::discord_connect,
             discord::discord_disconnect,
             discord::discord_set_activity,
@@ -214,10 +217,12 @@ fn wait_for_service() -> bool {
 
 fn create_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("http://localhost:{PORT}");
+    let titlebar = config::load(app.handle()).titlebar;
 
     #[allow(unused_mut)]
     let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url.parse()?))
-        .title("Stremio Horizon")
+        .title("Stremio Aether")
+        .decorations(!titlebar)
         .inner_size(1280.0, 800.0)
         .min_inner_size(900.0, 600.0)
         .initialization_script(SERVICE_WORKER_UPDATE_BRIDGE)
@@ -355,7 +360,7 @@ const EXT_PREFIX: &str = "/__ext__/";
 fn start_local_server(app: &mut tauri::App) {
     let app_handle = app.handle().clone();
     let resolver = app.asset_resolver();
-    let fallback = resolver.get("/".to_string()).map(|a| a.bytes);
+    let fallback = resolver.get("/index.html".to_string()).map(|a| a.bytes);
     let (tx, rx) = mpsc::channel();
 
     let ext_agent = ureq::AgentBuilder::new()
@@ -430,7 +435,8 @@ fn resolve_asset(
     path: &str,
     fallback: Option<&[u8]>,
 ) -> Option<tiny_http::Response<std::io::Cursor<Vec<u8>>>> {
-    let asset = resolver.get(path.to_string())?;
+    let key = if path == "/" { "/index.html" } else { path };
+    let asset = resolver.get(key.to_string())?;
 
     let is_root = path == "/" || path == "/index.html";
     if !is_root && fallback == Some(asset.bytes.as_slice()) {

@@ -1,12 +1,12 @@
 [package]
-name = "stremio-horizon-app"
-version = "0.4.2"
-description = "Desktop app for Stremio Horizon"
+name = "stremio-aether-app"
+version = "1.0.0"
+description = "Desktop app for Stremio Aether"
 authors = ["Aqu1tain"]
 edition = "2021"
 
 [lib]
-name = "stremio_horizon_app_lib"
+name = "stremio_aether_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

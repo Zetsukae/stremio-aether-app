@@ -185,7 +185,7 @@ fn play_blocking(app: AppHandle, request: VlcPlaybackRequest) -> Result<VlcPlayb
             return Err(if api_ready {
                 "VLC opened, but the stream did not start playing.".to_owned()
             } else {
-                "VLC started, but Horizon could not connect to its local playback status API."
+                "VLC started, but Stremio Aether could not connect to its local playback status API."
                     .to_owned()
             });
         }
