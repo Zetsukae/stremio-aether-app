@@ -2,7 +2,7 @@
 name = "stremio-aether-app"
 version = "1.0.0"
 description = "Desktop app for Stremio Aether"
-authors = ["Aqu1tain"]
+authors = ["Zetsukae"]
 edition = "2021"
 
 [lib]
