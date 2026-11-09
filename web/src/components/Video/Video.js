@@ -1,0 +1,318 @@
+// Copyright (C) 2017-2023 Smart code 203358507
+
+const React = require('react');
+const { useTranslation } = require('react-i18next');
+const { useNavigate } = require('react-router');
+const { default: toPath } = require('stremio-router/toPath');
+const PropTypes = require('prop-types');
+const classnames = require('classnames');
+const { default: useRouteFocused } = require('stremio/common/useRouteFocused');
+const { default: Icon } = require('stremio/components/Icon');
+const { Button, Image, Popup } = require('stremio/components');
+const { default: useBinaryState } = require('stremio/common/useBinaryState');
+const { default: useProfile } = require('stremio/common/useProfile');
+const { usePlatform } = require('stremio/common/Platform');
+const VideoPlaceholder = require('./VideoPlaceholder');
+const styles = require('./styles');
+
+const Video = ({ className, id, title, thumbnail, season, episode, released, upcoming, watched, progress, scheduled, seasonWatched, selected, autoScrollIntoView, deepLinks, downloadStatus, downloadBusy, downloadDisabled, onDownload, onSelect, onMarkVideoAsWatched, onMarkSeasonAsWatched, ...props }) => {
+    const routeFocused = useRouteFocused();
+    const profile = useProfile();
+    const navigate = useNavigate();
+    const platform = usePlatform();
+    const { t } = useTranslation();
+
+    const [menuOpen, openMenu, closeMenu, toggleMenu] = useBinaryState(false);
+
+    const popupLabelOnMouseUp = React.useCallback((event) => {
+        if (!event.nativeEvent.togglePopupPrevented) {
+            if (event.nativeEvent.ctrlKey || event.nativeEvent.button === 2) {
+                event.preventDefault();
+                openMenu();
+            }
+        }
+    }, [openMenu]);
+    const popupLabelOnContextMenu = React.useCallback((event) => {
+        if (!event.nativeEvent.togglePopupPrevented && !event.nativeEvent.ctrlKey && !event.nativeEvent.shiftKey) {
+            event.preventDefault();
+        }
+    }, [toggleMenu]);
+    const popupLabelOnLongPress = React.useCallback((event) => {
+        if (event.nativeEvent.pointerType !== 'mouse' && !event.nativeEvent.togglePopupPrevented) {
+            toggleMenu();
+        }
+    }, [toggleMenu]);
+    const popupMenuOnPointerDown = React.useCallback((event) => {
+        event.nativeEvent.togglePopupPrevented = true;
+    }, []);
+    const popupMenuOnContextMenu = React.useCallback((event) => {
+        event.nativeEvent.togglePopupPrevented = true;
+        if (!event.nativeEvent.ctrlKey && !event.nativeEvent.shiftKey) {
+            event.preventDefault();
+        }
+    }, []);
+    const popupMenuOnClick = React.useCallback((event) => {
+        event.nativeEvent.togglePopupPrevented = true;
+    }, []);
+    const popupMenuOnKeyDown = React.useCallback((event) => {
+        event.nativeEvent.buttonClickPrevented = true;
+    }, []);
+    const toggleWatchedOnClick = React.useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+        onMarkVideoAsWatched({ id, released }, watched);
+    }, [id, released, watched]);
+    const toggleWatchedSeasonOnClick = React.useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+        onMarkSeasonAsWatched(season, seasonWatched);
+    }, [season, seasonWatched, onMarkSeasonAsWatched]);
+    const notPlayable = upcoming || !(released instanceof Date) || isNaN(released.getTime());
+    const selectVideo = React.useCallback(() => {
+        if (typeof onSelect === 'function') {
+            onSelect();
+        }
+    }, [onSelect]);
+    const videoButtonOnClick = React.useCallback(() => {
+        if (notPlayable) return;
+
+        selectVideo();
+
+        if (deepLinks && typeof deepLinks.metaDetailsStreams === 'string') {
+            navigate(toPath(deepLinks.metaDetailsStreams), { replace: !platform.isMobile });
+        }
+    }, [notPlayable, deepLinks, navigate, platform.isMobile, selectVideo]);
+    const playButtonOnClick = React.useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (notPlayable) return;
+
+        selectVideo();
+        if (deepLinks && typeof deepLinks.player === 'string') {
+            navigate(toPath(deepLinks.player));
+        }
+    }, [notPlayable, deepLinks, navigate, selectVideo]);
+    const playButtonOnKeyDown = React.useCallback((event) => {
+        event.stopPropagation();
+    }, []);
+    const downloadButtonOnClick = React.useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const alreadyManaged = ['queued', 'downloading', 'paused', 'completed'].includes(downloadStatus);
+        if (!notPlayable && !downloadBusy && !downloadDisabled && !alreadyManaged && typeof onDownload === 'function') {
+            onDownload();
+        }
+    }, [downloadBusy, downloadDisabled, downloadStatus, notPlayable, onDownload]);
+    const downloadButtonOnKeyDown = React.useCallback((event) => {
+        event.stopPropagation();
+    }, []);
+    const renderLabel = React.useMemo(() => function renderLabel({ className, id, title, thumbnail, episode, released, upcoming, watched, progress, scheduled, children, ref, ...props }) {
+        const blurThumbnail = profile.settings.hideSpoilers && season && episode && !watched;
+
+        React.useEffect(() => {
+            if (autoScrollIntoView && ref.current) {
+                ref.current.scrollIntoView({
+                    behavior: 'auto',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            } else if (selected && ref.current) {
+                if ((progress && watched) || !watched) {
+                    ref.current.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'start'
+                    });
+                }
+            }
+        }, [autoScrollIntoView, selected]);
+
+        return (
+            <Button {...props} ref={ref} className={classnames(className, styles['video-container'], { [styles['selected']]: selected, [styles['disabled']]: notPlayable })} title={title}>
+                {
+                    typeof thumbnail === 'string' && thumbnail.length > 0 ?
+                        <div className={styles['thumbnail-container']}>
+                            <Image
+                                className={classnames(styles['thumbnail'], { [styles['blurred']]: blurThumbnail })}
+                                src={thumbnail}
+                                alt={' '}
+                                renderFallback={() => (
+                                    <Icon
+                                        className={styles['placeholder-icon']}
+                                        name={'symbol'}
+                                    />
+                                )}
+                            />
+                            {
+                                progress !== null && !isNaN(progress) && progress > 0 ?
+                                    <div className={styles['progress-bar-container']}>
+                                        <div className={styles['progress-bar']} style={{ width: `${progress}%` }} />
+                                        <div className={styles['progress-bar-background']} />
+                                    </div>
+                                    :
+                                    null
+                            }
+                        </div>
+                        :
+                        null
+                }
+                <div className={styles['info-container']}>
+                    <div className={styles['title-container']}>
+                        {episode !== null && !isNaN(episode) ? `${episode}. ` : null}
+                        {typeof title === 'string' && title.length > 0 ? title : id}
+                    </div>
+                    <div className={styles['flex-row-container']}>
+                        {
+                            released instanceof Date && !isNaN(released.getTime()) ?
+                                <div className={styles['released-container']}>
+                                    {released.toLocaleString(profile.settings.interfaceLanguage, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                </div>
+                                :
+                                scheduled ?
+                                    <div className={styles['released-container']} title={t('TBA')}>
+                                        {t('TBA')}
+                                    </div>
+                                    :
+                                    null
+                        }
+                    </div>
+                </div>
+                {
+                    upcoming || watched ?
+                        <div className={styles['upcoming-watched-container']}>
+                            {
+                                upcoming && !watched ?
+                                    <div className={styles['upcoming-container']}>
+                                        <div className={styles['flag-label']}>{t('UPCOMING')}</div>
+                                    </div>
+                                    :
+                                    null
+                            }
+                            {
+                                watched ?
+                                    <div className={styles['watched-container']}>
+                                        <Icon className={styles['flag-icon']} name={'eye'} />
+                                        <div className={styles['flag-label']}>{t('CTX_WATCHED')}</div>
+                                    </div>
+                                    :
+                                    null
+                            }
+                        </div>
+                        :
+                        null
+                }
+                {
+                    typeof onDownload === 'function' ?
+                        <Button
+                            className={classnames(styles['download-button-container'], {
+                                [styles['busy']]: downloadBusy || downloadStatus === 'queued' || downloadStatus === 'downloading',
+                                [styles['downloaded']]: downloadStatus === 'completed',
+                            })}
+                            title={downloadStatus === 'completed' ? t('CTX_AVAILABLE_OFFLINE') : t('CTX_DOWNLOAD_VIDEO')}
+                            disabled={downloadBusy || downloadDisabled || ['queued', 'downloading', 'paused', 'completed'].includes(downloadStatus)}
+                            onClick={downloadButtonOnClick}
+                            onKeyDown={downloadButtonOnKeyDown}
+                        >
+                            <Icon
+                                className={styles['download-icon']}
+                                name={downloadStatus === 'completed' ? 'checkmark' : downloadBusy || downloadStatus === 'queued' || downloadStatus === 'downloading' ? 'reset' : downloadStatus === 'paused' ? 'pause' : 'download'}
+                            />
+                        </Button>
+                        :
+                        null
+                }
+                {
+                    deepLinks && typeof deepLinks.player === 'string' ?
+                        <Button
+                            className={styles['play-button-container']}
+                            title={t('CTX_WATCH')}
+                            onClick={playButtonOnClick}
+                            onKeyDown={playButtonOnKeyDown}
+                        >
+                            <Icon className={styles['play-icon']} name={'play'} />
+                        </Button>
+                        :
+                        null
+                }
+                {children}
+            </Button>
+        );
+    }, [autoScrollIntoView, deepLinks, downloadBusy, downloadButtonOnClick, downloadButtonOnKeyDown, downloadDisabled, downloadStatus, onDownload, playButtonOnClick, playButtonOnKeyDown, selected]);
+    const renderMenu = React.useMemo(() => function renderMenu() {
+        return (
+            <div className={styles['context-menu-content']} onPointerDown={popupMenuOnPointerDown} onContextMenu={popupMenuOnContextMenu} onClick={popupMenuOnClick} onKeyDown={popupMenuOnKeyDown}>
+                <Button className={styles['context-menu-option-container']} title={t('CTX_WATCH')}>
+                    <div className={styles['context-menu-option-label']}>{t('CTX_WATCH')}</div>
+                </Button>
+                <Button className={styles['context-menu-option-container']} title={watched ? t('CTX_MARK_NON_WATCHED') : t('CTX_MARK_WATCHED')} onClick={toggleWatchedOnClick}>
+                    <div className={styles['context-menu-option-label']}>{watched ? t('CTX_MARK_NON_WATCHED') : t('CTX_MARK_WATCHED')}</div>
+                </Button>
+                <Button className={styles['context-menu-option-container']} title={seasonWatched ? t('CTX_UNMARK_REST') : t('CTX_MARK_REST')} onClick={toggleWatchedSeasonOnClick}>
+                    <div className={styles['context-menu-option-label']}>{seasonWatched ? t('CTX_UNMARK_REST') : t('CTX_MARK_REST')}</div>
+                </Button>
+            </div>
+        );
+    }, [watched, seasonWatched, toggleWatchedOnClick]);
+    React.useEffect(() => {
+        if (!routeFocused) {
+            closeMenu();
+        }
+    }, [routeFocused]);
+    return (
+        <Popup
+            className={className}
+            id={id}
+            title={title}
+            thumbnail={thumbnail}
+            episode={episode}
+            released={released}
+            upcoming={upcoming}
+            watched={watched}
+            progress={progress}
+            scheduled={scheduled}
+            onClick={videoButtonOnClick}
+            {...props}
+            onMouseUp={popupLabelOnMouseUp}
+            onLongPress={popupLabelOnLongPress}
+            onContextMenu={popupLabelOnContextMenu}
+            open={menuOpen}
+            onCloseRequest={closeMenu}
+            renderLabel={renderLabel}
+            renderMenu={renderMenu}
+        />
+    );
+};
+
+Video.Placeholder = VideoPlaceholder;
+
+Video.propTypes = {
+    className: PropTypes.string,
+    id: PropTypes.string,
+    title: PropTypes.string,
+    thumbnail: PropTypes.string,
+    season: PropTypes.number,
+    episode: PropTypes.number,
+    released: PropTypes.instanceOf(Date),
+    upcoming: PropTypes.bool,
+    watched: PropTypes.bool,
+    progress: PropTypes.number,
+    scheduled: PropTypes.bool,
+    seasonWatched: PropTypes.bool,
+    selected: PropTypes.bool,
+    autoScrollIntoView: PropTypes.bool,
+    downloadStatus: PropTypes.string,
+    downloadBusy: PropTypes.bool,
+    downloadDisabled: PropTypes.bool,
+    onDownload: PropTypes.func,
+    deepLinks: PropTypes.shape({
+        metaDetailsStreams: PropTypes.string,
+        player: PropTypes.string
+    }),
+    onSelect: PropTypes.func,
+    onMarkVideoAsWatched: PropTypes.func,
+    onMarkSeasonAsWatched: PropTypes.func,
+};
+
+module.exports = Video;

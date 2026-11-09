@@ -1,0 +1,123 @@
+# Stremio Horizon
+
+> [!IMPORTANT]
+> **This project is archived and no longer maintained.**
+>
+> I no longer have the time to develop Stremio Horizon, and [Nuvio](https://nuvio.tv) has recently become the best alternative to it. It shares a philosophy very close to mine, so there is no point in keeping this project going.
+>
+> If you liked Horizon, go check out [Nuvio](https://nuvio.tv) ([source](https://github.com/tapframe/NuvioStreaming)). The code here stays available as-is, and the last desktop build remains downloadable from the [releases page](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest).
+
+[![Based on](https://img.shields.io/badge/based%20on-stremio--web%20v5.0.0--beta.39-blue)](https://github.com/Stremio/stremio-web/tree/v5.0.0-beta.39)
+
+An alternative web UI for [Stremio](https://www.stremio.com), focused on modern design and usability.
+
+This is not a replacement for Stremio — just one person's take on what a great UI could look like. If you like [Stremio](https://www.stremio.com), go give it a star!
+
+Based on [Stremio Web 5](https://github.com/Stremio/stremio-web), but going in a different direction — rethinking navigation, layout, and visual identity while keeping full compatibility with the Stremio ecosystem and addons.
+
+> **Early stage** — usable but not fully stable. Expect rough edges.
+
+## What's different
+
+### Navigation
+- Horizontal top navbar with tabs (replaces the sidebar on desktop)
+- Auto-hide navbar on scroll (Board and MetaDetails pages)
+- Full-width search bar on dedicated search page
+- Redesigned search history and suggestions dropdown
+
+### Board
+- Hero banner carousel with auto-rotation and crossfade transitions
+- Horizontally scrolling catalog rows with redesigned cards
+
+### MetaDetails
+- Single-column hero layout with full-width background
+- Tabbed navigation (Details / Videos / Streams)
+- Play / Resume buttons with smart episode tracking
+- Episode drill-down directly to streams
+- See-more link on truncated descriptions
+
+### Discover
+- Slide-out preview panel (replaces the sidebar)
+
+### Streams
+- Quality badge parser (4K, HDR, Dolby, etc.)
+- Filter chips to narrow results by quality
+- Restyled stream popups
+
+### Icons
+- Migrated to [Lucide](https://lucide.dev) icons with automatic fallback to stremio-icons for brand/custom icons
+
+### Settings
+- Redesigned layout with categorized sections and glass-morphism cards
+- Copy-to-clipboard button for build hash
+
+### Visual polish
+- Overlay borders replacing outer-glow shadows
+- Consistent spacing and typography across pages
+- Subtler background gradients
+- Play button on hover for catalog items
+
+## Screenshots
+
+### Board
+![Board](/assets/screenshots/board.png)
+
+### Discover
+![Discover](/assets/screenshots/discover.png)
+
+### MetaDetails — Movie
+![MetaDetails Movie](/assets/screenshots/metadetails.png)
+
+### MetaDetails — Series
+![MetaDetails Series](/assets/screenshots/metadetails-series.png)
+
+### Search
+![Search](/assets/screenshots/search.png)
+
+## Build
+
+### Prerequisites
+
+* Node.js 22 or higher
+* [pnpm](https://pnpm.io/installation) 11 or higher
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+### Start development server
+
+```bash
+pnpm start
+```
+
+### Production build
+
+```bash
+pnpm run build
+```
+
+### Run with Docker
+
+```bash
+docker build -t stremio-horizon .
+docker run -p 8080:8080 stremio-horizon
+```
+
+## Desktop app
+
+Looking for the desktop version? See [Stremio Horizon App](https://github.com/Aqu1tain/stremio-horizon-app).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Aqu1tain/stremio-horizon&type=Date)](https://star-history.com/#Aqu1tain/stremio-horizon&Date)
+
+## Credits
+
+Based on [stremio-web](https://github.com/Stremio/stremio-web) by [Smart Code](https://www.stremio.com). Original code is copyright 2017-2023 Smart Code and available under the GPLv2 license. See the [LICENSE](/LICENSE.md) file for details.
+
+## License
+
+GPL-2.0 — see [LICENSE.md](LICENSE.md).

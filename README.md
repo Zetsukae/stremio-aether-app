@@ -20,9 +20,8 @@ It bundles the Stremio Horizon web UI with a [forked stremio-service](https://gi
 
 | Platform | Download |
 |----------|----------|
-| macOS (Apple Silicon) | [.dmg](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) |
-| Linux (x64) | [.AppImage / .deb](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) |
-| Windows (x64) | [.msi / .exe](https://github.com/Aqu1tain/stremio-horizon-app/releases/latest) |
+| Linux (x64) | [.AppImage / .deb](https://github.com/Zetsukae/stremio-aether-app/releases/latest) |
+| Windows (x64) | [.msi / .exe](https://github.com/Zetsukae/stremio-aether-app/releases/latest) |
 
 Release history is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -43,18 +42,16 @@ Tauri serves the frontend over `localhost` and spawns `stremio-service` as a sid
 ### Prerequisites
 
 - [Rust](https://rustup.rs)
-- [pnpm](https://pnpm.io) 10+
-- [Node.js](https://nodejs.org) 20+
-- The Stremio Horizon web UI cloned as a sibling directory (`../stremio-horizon`), since the build copies its output from there
+- [pnpm](https://pnpm.io) 11+
+- [Node.js](https://nodejs.org) 22+
 
 ### Setup
 
-1. Clone the repos:
+1. Install dependencies:
 
 ```bash
-git clone https://github.com/Aqu1tain/stremio-horizon-app ../stremio-horizon
-cd stremio-aether-app
 pnpm install
+pnpm --dir web install
 ```
 
 2. Place stremio-service binaries in `src-tauri/binaries/`.
@@ -81,16 +78,15 @@ pnpm dev
 pnpm build
 ```
 
-This builds the web UI from `../stremio-horizon` into `dist/`, then packages the app. Output goes to `src-tauri/target/release/bundle/`: `.dmg` (macOS), `.AppImage` / `.deb` (Linux) or `.msi` / `.exe` (Windows).
+This builds the web UI from `web/` into `dist/`, then packages the app. Output goes to `src-tauri/target/release/bundle/`: `.AppImage` / `.deb` (Linux) or `.msi` / `.exe` (Windows).
 
 ## Related repos
 
-- [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon-app): web UI this app is based on
 - [stremio-service (fork)](https://github.com/Aqu1tain/stremio-service): streaming backend
 
 ## Credits
 
-Built on top of [stremio-service](https://github.com/Stremio/stremio-service) by [Smart Code](https://www.stremio.com) and [stremio-web](https://github.com/Stremio/stremio-web), and on Stremio Horizon by Aqu1tain.
+Built on top of [stremio-service](https://github.com/Stremio/stremio-service) by [Smart Code](https://www.stremio.com) and [stremio-web](https://github.com/Stremio/stremio-web), and on Stremio Horizon by Aqu1tain. The web UI in `web/` is the Stremio Horizon source.
 
 ## License
 

@@ -6,10 +6,6 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      frontend_version:
-        description: 'stremio-horizon release tag to bundle (e.g. v0.1.10)'
-        required: true
-        default: 'v0.1.10'
       service_version:
         description: 'stremio-service fork tag to build (e.g. v0.1.0-horizon.2)'
         required: true
@@ -22,18 +18,27 @@ jobs:
   build-web:
     runs-on: ubuntu-latest
     steps:
-      - name: Download latest stremio-horizon release
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Build web UI
         run: |
-          gh release download --repo Aqu1tain/stremio-horizon "$FRONTEND_VERSION" --pattern 'stremio-web.zip'
-          unzip stremio-web.zip
-        env:
-          GH_TOKEN: ${{ github.token }}
-          FRONTEND_VERSION: ${{ inputs.frontend_version || 'v0.1.10' }}
+          pnpm --dir web install --frozen-lockfile
+          pnpm --dir web run build
 
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
-          path: build/
+          path: web/build/
 
   create-release:
     needs: build-web
@@ -61,14 +66,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            arch: aarch64-apple-darwin
-            service-os: macos
-            ext: ""
-          - platform: macos-15-intel
-            arch: x86_64-apple-darwin
-            service-os: macos
-            ext: ""
           - platform: ubuntu-22.04
             arch: x86_64-unknown-linux-gnu
             service-os: linux

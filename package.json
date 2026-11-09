@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "tauri": "tauri",
-    "build:web": "cd ../stremio-horizon && pnpm run build && rm -rf ../stremio-aether-app/dist && mkdir -p ../stremio-aether-app/dist && cp -r build/. ../stremio-aether-app/dist/",
+    "build:web": "pnpm --dir web run build && rm -rf dist && mkdir -p dist && cp -r web/build/. dist/",
     "dev": "pnpm tauri dev",
     "build": "pnpm build:web && pnpm tauri build"
   },

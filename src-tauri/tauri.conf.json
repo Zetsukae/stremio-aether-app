@@ -16,9 +16,9 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/Aqu1tain/stremio-horizon-app/releases/latest/download/latest.json"
+        "https://github.com/Zetsukae/stremio-aether-app/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM0OEVGNDk5NThGNDM2NDkKUldSSk52UlltZlNPeEFvbzl6dzFtMncyZlJCTy9sOGtoYVlud21GQmJEZUdJTjlxTkdCakpjcnAK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1MTQ0RDQ0NEE4QTUzRjAKUldUd1U0cEtSRTBVZFd0NEQ5THpUR3dWRStXL2dhQndJNW1WcFl2MFpuNzNkSEN6MDlxYVNtN2EK"
     }
   },
   "bundle": {

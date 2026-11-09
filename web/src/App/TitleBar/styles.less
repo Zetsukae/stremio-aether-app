@@ -1,0 +1,58 @@
+.titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    height: var(--titlebar-size);
+    padding: 0 0.75rem;
+    background: rgba(12, 11, 17, 0.8);
+    user-select: none;
+
+    &.left {
+        justify-content: flex-start;
+    }
+
+    &.center {
+        justify-content: center;
+    }
+
+    &.right {
+        justify-content: flex-end;
+    }
+
+    .close-button {
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        .icon {
+            flex: none;
+            width: 0.95rem;
+            height: 0.95rem;
+            color: var(--primary-foreground-color);
+            opacity: 0.7;
+        }
+
+        @media (pointer: fine) {
+            &:hover {
+                background: var(--danger-accent-color);
+
+                .icon {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+}
