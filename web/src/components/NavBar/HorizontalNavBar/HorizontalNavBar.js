@@ -52,7 +52,7 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
             {children}
         </Button>
     ), []);
-    const showSearchIcon = searchBar && route !== 'addons';
+    const showSearchIcon = searchBar;
     const showFullscreen = supported && !isIOSPWA && fullscreenButton;
     const hasTabs = Array.isArray(tabs) && tabs.length > 0;
     useHorizontalNavGamepadNavigation(route || className, backButton);
