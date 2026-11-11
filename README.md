@@ -23,7 +23,7 @@ It bundles the Stremio Horizon web UI with a [forked stremio-service](https://gi
 | Linux (x64) | [.AppImage / .deb](https://github.com/Zetsukae/stremio-aether-app/releases/latest) |
 | Windows (x64) | [.msi / .exe](https://github.com/Zetsukae/stremio-aether-app/releases/latest) |
 
-Release history is in [CHANGELOG.md](CHANGELOG.md).
+Release history is on the [Releases page](https://github.com/Zetsukae/stremio-aether-app/releases).
 
 ### macOS: app is damaged / can't be opened
 
