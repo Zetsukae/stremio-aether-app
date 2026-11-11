@@ -1,6 +1,6 @@
 [package]
 name = "stremio-aether-app"
-version = "1.1.0-1"
+version = "1.2.0-1"
 description = "Desktop app for Stremio Aether"
 authors = ["Zetsukae"]
 edition = "2021"

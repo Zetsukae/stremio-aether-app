@@ -1,7 +1,7 @@
 {
   "name": "stremio-aether-app",
   "private": true,
-  "version": "1.1.0-1",
+  "version": "1.2.0-1",
   "scripts": {
     "tauri": "tauri",
     "build:web": "pnpm --dir web run build && rm -rf dist && mkdir -p dist && cp -r web/build/. dist/",
