@@ -9,12 +9,14 @@ const { default: Icon } = require('stremio/components/Icon');
 const { Button, Image } = require('stremio/components');
 const { useFullscreen } = require('stremio/common/Fullscreen');
 const { default: usePWA } = require('stremio/common/usePWA');
-const { default: useBinaryState } = require('stremio/common/useBinaryState');
 const { useHorizontalNavGamepadNavigation } = require('stremio/services/GamepadNavigation');
+const { isNoAnimationsEnabled } = require('stremio/common/reduceMotion');
 const SearchBar = require('./SearchBar');
 const NavMenu = require('./NavMenu');
 const styles = require('./styles');
 const { t } = require('i18next');
+
+const SEARCH_CLOSE_DURATION = 200;
 
 const HorizontalNavBar = React.memo(({ className, route, query, title, backButton, searchBar, fullscreenButton, navMenu, originPath, hdrInfo, tabs, selected, navbarHidden, navbarScrolled, ...props }) => {
     const navigate = useNavigate();
@@ -27,7 +29,16 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
     }, [originPath, navigate]);
     const [fullscreen, requestFullscreen, exitFullscreen, , supported] = useFullscreen();
     const [isIOSPWA] = usePWA();
-    const [searchOpen, openSearch, closeSearch] = useBinaryState(false);
+    const [searchState, setSearchState] = React.useState('closed');
+    const searchOpen = searchState === 'open';
+    const searchClosing = searchState === 'closing';
+    const openSearch = React.useCallback(() => setSearchState('open'), []);
+    const closeSearch = React.useCallback(() => {
+        setSearchState((state) => {
+            if (state !== 'open') return state;
+            return isNoAnimationsEnabled() ? 'closed' : 'closing';
+        });
+    }, []);
     const pillRef = React.useRef(null);
     const renderNavMenuLabel = React.useCallback(({ ref, className, onClick, children, }) => (
         <Button ref={ref} className={classnames(className, styles['button-container'], styles['menu-button-container'])} tabIndex={-1} onClick={onClick}>
@@ -55,6 +66,12 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
     }, [route, openSearch, closeSearch]);
 
     React.useEffect(() => {
+        if (!searchClosing) return;
+        const timeout = setTimeout(() => setSearchState('closed'), SEARCH_CLOSE_DURATION);
+        return () => clearTimeout(timeout);
+    }, [searchClosing]);
+
+    React.useEffect(() => {
         if (!searchOpen) return;
         const onKeyDown = (event) => {
             if (event.key === 'Escape') closeSearch();
@@ -79,8 +96,8 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
             {hasTabs && navMenu && <NavMenu renderLabel={renderLogoMenuLabel} />}
             {hasTabs &&
                 <div ref={pillRef} className={styles['nav-pill']}>
-                    {searchOpen ?
-                        <SearchBar className={styles['nav-search']} query={query} active={true} />
+                    {searchOpen || searchClosing ?
+                        <SearchBar className={classnames(styles['nav-search'], { [styles['nav-search-exit']]: !searchOpen })} query={query} active={true} />
                         :
                         <React.Fragment>
                             {tabs.map((tab) => (

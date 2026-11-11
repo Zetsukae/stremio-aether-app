@@ -17,6 +17,15 @@
 :global {
     @import (once, less) '~stremio/common/animations.less';
     @import (once, less) '~stremio-router/styles.css';
+
+    :root[data-no-animations],
+    :root[data-no-animations] *,
+    :root[data-no-animations] *::before,
+    :root[data-no-animations] *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 // iOS pads the bottom inset more than needed, so we deduce the actual inset size when using the webapp

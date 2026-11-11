@@ -69,7 +69,11 @@ const Info = ({ streamingServer }: Props) => {
                 <Button className={styles['fork-link']} title={'Stremio Horizon'} href={'https://github.com/Aqu1tain/stremio-horizon-app'} target={'_blank'}>
                     {'Stremio Horizon'}
                 </Button>
-                {', maintained by Zetsukae.'}
+                {', maintained by Zetsukae. Licensed under '}
+                <Button className={styles['fork-link']} title={'GPL-2.0'} href={'https://github.com/Zetsukae/stremio-aether-app/blob/development/LICENSE.md'} target={'_blank'}>
+                    {'GPL-2.0'}
+                </Button>
+                {'.'}
             </div>
         </Section>
     );

@@ -20,6 +20,7 @@ const Interface = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) =>
         gamepadSupportToggle,
         aetherTitlebarToggle,
         closeButtonSelect,
+        noAnimationsToggle,
     } = useInterfaceOptions(profile);
 
     return (
@@ -76,6 +77,12 @@ const Interface = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) =>
                 <Toggle
                     tabIndex={-1}
                     {...gamepadSupportToggle}
+                />
+            </Option>
+            <Option label={'HORIZON_NO_ANIMATIONS'}>
+                <Toggle
+                    tabIndex={-1}
+                    {...noAnimationsToggle}
                 />
             </Option>
         </Section>

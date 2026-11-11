@@ -21,6 +21,9 @@ const horizonTranslations = require('./horizon-translations');
 const App = require('./App');
 const { CoreProvider } = require('./core');
 const { FileDropProvider, PlatformProvider } = require('./common');
+const { applyNoAnimations, isNoAnimationsEnabled } = require('./common/reduceMotion');
+
+applyNoAnimations(isNoAnimationsEnabled());
 
 const translations = Object.fromEntries(Object.entries(stremioTranslations()).map(([key, value]) => [key, {
     translation: {

@@ -44,6 +44,7 @@ module.exports = {
         HORIZON_CLOSE_BUTTON_LEFT: 'Left',
         HORIZON_CLOSE_BUTTON_CENTER: 'Center',
         HORIZON_CLOSE_BUTTON_RIGHT: 'Right',
+        HORIZON_NO_ANIMATIONS: 'No animations',
     },
     'fr-FR': {
         DOWNLOADS: 'Téléchargements',
@@ -104,6 +105,7 @@ module.exports = {
         HORIZON_CLOSE_BUTTON_LEFT: 'Gauche',
         HORIZON_CLOSE_BUTTON_CENTER: 'Centre',
         HORIZON_CLOSE_BUTTON_RIGHT: 'Droite',
+        HORIZON_NO_ANIMATIONS: 'Aucune animation',
         SETTINGS_DISCORD: 'Afficher l’activité de visionnage sur Discord',
     },
 };

@@ -3,7 +3,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -20,8 +20,10 @@ pub const DOWNLOAD_PREFIX: &str = "/__downloads__/";
 const INDEX_FILE: &str = "index.json";
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 const MAX_REDIRECTS: usize = 5;
-const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(60);
+const DOWNLOAD_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_TRANSFER_ATTEMPTS: u32 = 5;
+const RETRY_DELAY: Duration = Duration::from_secs(1);
 const MAX_THUMBNAIL_BYTES: u64 = 10 * 1024 * 1024;
 const MAX_HLS_PLAYLIST_BYTES: u64 = 5 * 1024 * 1024;
 const MAX_HLS_RESOURCES: usize = 100_000;
@@ -471,10 +473,10 @@ fn run_download(app: &AppHandle, id: &str, cancel: &AtomicBool) -> Result<(), St
         .map(|metadata| metadata.len())
         .unwrap_or(0);
 
-    let mut response = fetch(&item.source_url, existing)?;
+    let mut response = fetch_retrying(&item.source_url, existing, cancel)?;
     if response.status() == 416 && existing > 0 {
         remove_if_exists(&partial_path)?;
-        response = fetch(&item.source_url, 0)?;
+        response = fetch_retrying(&item.source_url, 0, cancel)?;
     }
     if !matches!(response.status(), 200 | 206) {
         return Err(format!(
@@ -532,6 +534,7 @@ fn run_download(app: &AppHandle, id: &str, cancel: &AtomicBool) -> Result<(), St
     let mut buffer = [0_u8; 64 * 1024];
     let mut downloaded = start;
     let mut last_progress = Instant::now();
+    let mut failures = 0;
     loop {
         if cancel.load(Ordering::Relaxed) {
             update_item(app, id, |item| {
@@ -541,28 +544,34 @@ fn run_download(app: &AppHandle, id: &str, cancel: &AtomicBool) -> Result<(), St
             return Ok(());
         }
 
-        let read = reader
-            .read(&mut buffer)
-            .map_err(|error| format!("download interrupted: {error}"))?;
-        if read == 0 {
-            break;
-        }
-        file.write_all(&buffer[..read])
-            .map_err(|error| format!("failed to write download: {error}"))?;
-        downloaded = downloaded.saturating_add(read as u64);
+        let interruption = match reader.read(&mut buffer) {
+            Ok(0) if total.map_or(true, |expected| downloaded >= expected) => break,
+            Ok(0) => "the connection ended before the file was complete".to_owned(),
+            Ok(read) => {
+                failures = 0;
+                file.write_all(&buffer[..read])
+                    .map_err(|error| format!("failed to write download: {error}"))?;
+                downloaded = downloaded.saturating_add(read as u64);
 
-        if last_progress.elapsed() >= PROGRESS_INTERVAL {
-            update_item(app, id, |item| item.downloaded_bytes = downloaded)?;
-            last_progress = Instant::now();
+                if last_progress.elapsed() >= PROGRESS_INTERVAL {
+                    update_item(app, id, |item| item.downloaded_bytes = downloaded)?;
+                    last_progress = Instant::now();
+                }
+                continue;
+            }
+            Err(error) => format!("download interrupted: {error}"),
+        };
+
+        failures += 1;
+        if failures >= MAX_TRANSFER_ATTEMPTS || cancel.load(Ordering::Relaxed) {
+            return Err(interruption);
         }
+        thread::sleep(RETRY_DELAY * failures);
+        reader = resume_body(&item.source_url, downloaded, cancel)?;
     }
     file.flush()
         .map_err(|error| format!("failed to flush download: {error}"))?;
     drop(file);
-
-    if total.is_some_and(|expected| downloaded < expected) {
-        return Err("the connection ended before the file was complete".to_owned());
-    }
 
     if is_playlist_file(&resolved_file_name) && file_starts_with_hls_playlist(&partial_path)? {
         let playlist = fs::read_to_string(&partial_path)
@@ -853,7 +862,7 @@ fn download_hls_playlist(
     let url = base_url
         .join(raw_url)
         .map_err(|_| "invalid nested HLS playlist URL".to_owned())?;
-    let response = fetch(url.as_str(), 0)?;
+    let response = fetch_retrying(url.as_str(), 0, cancel)?;
     if response.status() != 200 {
         return Err(format!(
             "HLS playlist server returned HTTP {}",
@@ -916,12 +925,12 @@ fn download_hls_resource(
         .metadata()
         .map(|metadata| metadata.len())
         .unwrap_or(0);
-    let mut response = fetch(url.as_str(), existing)?;
+    let mut response = fetch_retrying(url.as_str(), existing, cancel)?;
     if response.status() == 416 && existing > 0 {
         progress.bytes = progress.bytes.saturating_sub(existing);
         remove_if_exists(&partial_path)?;
         existing = 0;
-        response = fetch(url.as_str(), 0)?;
+        response = fetch_retrying(url.as_str(), 0, cancel)?;
     }
     if !matches!(response.status(), 200 | 206) {
         return Err(format!(
@@ -951,29 +960,37 @@ fn download_hls_resource(
     let mut reader = response.into_reader();
     let mut buffer = [0_u8; 64 * 1024];
     let mut resource_bytes = existing;
+    let mut failures = 0;
     loop {
         pause_hls_if_requested(app, id, cancel, progress.bytes)?;
-        let read = reader
-            .read(&mut buffer)
-            .map_err(|error| format!("HLS download interrupted: {error}"))?;
-        if read == 0 {
-            break;
+        let interruption = match reader.read(&mut buffer) {
+            Ok(0) if expected.map_or(true, |total| resource_bytes >= total) => break,
+            Ok(0) => "the HLS resource ended before it was complete".to_owned(),
+            Ok(read) => {
+                failures = 0;
+                file.write_all(&buffer[..read])
+                    .map_err(|error| format!("failed to write HLS resource: {error}"))?;
+                resource_bytes = resource_bytes.saturating_add(read as u64);
+                progress.bytes = progress.bytes.saturating_add(read as u64);
+                if progress.last_update.elapsed() >= PROGRESS_INTERVAL {
+                    update_item(app, id, |item| item.downloaded_bytes = progress.bytes)?;
+                    progress.last_update = Instant::now();
+                }
+                continue;
+            }
+            Err(error) => format!("HLS download interrupted: {error}"),
+        };
+
+        failures += 1;
+        if failures >= MAX_TRANSFER_ATTEMPTS || cancel.load(Ordering::Relaxed) {
+            return Err(interruption);
         }
-        file.write_all(&buffer[..read])
-            .map_err(|error| format!("failed to write HLS resource: {error}"))?;
-        resource_bytes = resource_bytes.saturating_add(read as u64);
-        progress.bytes = progress.bytes.saturating_add(read as u64);
-        if progress.last_update.elapsed() >= PROGRESS_INTERVAL {
-            update_item(app, id, |item| item.downloaded_bytes = progress.bytes)?;
-            progress.last_update = Instant::now();
-        }
+        thread::sleep(RETRY_DELAY * failures);
+        reader = resume_body(url.as_str(), resource_bytes, cancel)?;
     }
     file.flush()
         .map_err(|error| format!("failed to flush HLS resource: {error}"))?;
     drop(file);
-    if expected.is_some_and(|total| resource_bytes < total) {
-        return Err("the HLS resource ended before it was complete".to_owned());
-    }
     fs::rename(&partial_path, &final_path)
         .map_err(|error| format!("failed to finalize HLS resource: {error}"))
 }
@@ -1112,20 +1129,28 @@ fn write_text_file(path: &Path, contents: &str) -> Result<(), String> {
     fs::write(path, contents).map_err(|error| format!("failed to save HLS playlist: {error}"))
 }
 
+fn agents() -> &'static (ureq::Agent, ureq::Agent) {
+    static AGENTS: OnceLock<(ureq::Agent, ureq::Agent)> = OnceLock::new();
+    AGENTS.get_or_init(|| {
+        let public = ureq::AgentBuilder::new()
+            .timeout_read(DOWNLOAD_IDLE_TIMEOUT)
+            .timeout_connect(CONNECT_TIMEOUT)
+            .redirects(0)
+            .try_proxy_from_env(false)
+            .resolver(proxy_security::PublicResolver)
+            .build();
+        let local = ureq::AgentBuilder::new()
+            .timeout_read(DOWNLOAD_IDLE_TIMEOUT)
+            .timeout_connect(CONNECT_TIMEOUT)
+            .redirects(0)
+            .try_proxy_from_env(false)
+            .build();
+        (public, local)
+    })
+}
+
 fn fetch(url: &str, offset: u64) -> Result<ureq::Response, String> {
-    let public_agent = ureq::AgentBuilder::new()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .timeout_connect(CONNECT_TIMEOUT)
-        .redirects(0)
-        .try_proxy_from_env(false)
-        .resolver(proxy_security::PublicResolver)
-        .build();
-    let local_agent = ureq::AgentBuilder::new()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .timeout_connect(CONNECT_TIMEOUT)
-        .redirects(0)
-        .try_proxy_from_env(false)
-        .build();
+    let (public_agent, local_agent) = agents();
     let mut current = Url::parse(url).map_err(|_| "invalid download URL")?;
 
     for _ in 0..=MAX_REDIRECTS {
@@ -1165,6 +1190,35 @@ fn fetch(url: &str, offset: u64) -> Result<ureq::Response, String> {
         return Ok(response);
     }
     Err("too many download redirects".to_owned())
+}
+
+fn fetch_retrying(url: &str, offset: u64, cancel: &AtomicBool) -> Result<ureq::Response, String> {
+    let mut failures = 0;
+    loop {
+        match fetch(url, offset) {
+            Ok(response) => return Ok(response),
+            Err(error) => {
+                failures += 1;
+                if failures >= MAX_TRANSFER_ATTEMPTS || cancel.load(Ordering::Relaxed) {
+                    return Err(error);
+                }
+                thread::sleep(RETRY_DELAY * failures);
+            }
+        }
+    }
+}
+
+fn resume_body(
+    url: &str,
+    offset: u64,
+    cancel: &AtomicBool,
+) -> Result<Box<dyn Read + Send + Sync>, String> {
+    let response = fetch_retrying(url, offset, cancel)?;
+    match response.status() {
+        206 => Ok(response.into_reader()),
+        200 if offset == 0 => Ok(response.into_reader()),
+        status => Err(format!("download server returned HTTP {status} when resuming")),
+    }
 }
 
 fn cache_thumbnail(app: &AppHandle, id: &str) -> Result<(), String> {

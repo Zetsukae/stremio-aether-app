@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCore } from 'stremio/core';
 import { interfaceLanguages, useLanguageSorting } from 'stremio/common';
 import { CloseButtonPosition, setTitlebarCloseButton, setTitlebarEnabled, useTitlebarSettings } from 'stremio/common/titlebar';
+import { isNoAnimationsEnabled, setNoAnimations } from 'stremio/common/reduceMotion';
 
 const useInterfaceOptions = (profile: Profile) => {
     const core = useCore();
@@ -109,6 +110,16 @@ const useInterfaceOptions = (profile: Profile) => {
         }
     }), [aetherTitlebar]);
 
+    const [noAnimations, setNoAnimationsState] = useState(isNoAnimationsEnabled);
+
+    const noAnimationsToggle = useMemo(() => ({
+        checked: noAnimations,
+        onClick: () => {
+            setNoAnimations(!noAnimations);
+            setNoAnimationsState(!noAnimations);
+        }
+    }), [noAnimations]);
+
     const closeButtonSelect = useMemo(() => {
         const positions: CloseButtonPosition[] = ['left', 'center', 'right'];
         return {
@@ -131,6 +142,7 @@ const useInterfaceOptions = (profile: Profile) => {
         gamepadSupportToggle,
         aetherTitlebarToggle,
         closeButtonSelect,
+        noAnimationsToggle,
     };
 };
 

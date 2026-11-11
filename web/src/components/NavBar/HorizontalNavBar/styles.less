@@ -74,6 +74,11 @@
             margin: 0 0.25rem;
             animation: nav-search-in 0.2s ease-out;
         }
+
+        .nav-search-exit {
+            animation: nav-search-out 0.2s ease-in forwards;
+            pointer-events: none;
+        }
     }
 
     .back-button-container {
@@ -165,6 +170,18 @@
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@keyframes nav-search-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.94);
     }
 }
 
