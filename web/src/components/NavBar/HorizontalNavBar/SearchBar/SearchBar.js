@@ -17,7 +17,7 @@ const useLocalSearch = require('./useLocalSearch');
 const styles = require('./styles');
 const { default: useBinaryState } = require('stremio/common/useBinaryState');
 
-const SearchBar = React.memo(({ className, query, active }) => {
+const SearchBar = React.memo(({ className, query, active, autoFocus = true }) => {
     const { t } = useTranslation();
     const routeFocused = useRouteFocused();
     const searchHistory = useSearchHistory();
@@ -68,9 +68,14 @@ const SearchBar = React.memo(({ className, query, active }) => {
 
     const queryInputClear = React.useCallback(() => {
         searchInputRef.current.value = '';
+        searchInputRef.current.blur();
         setCurrentQuery('');
         navigate('/');
     }, [navigate]);
+
+    const submitButtonOnMouseDown = React.useCallback((event) => {
+        event.nativeEvent.buttonBlurPrevented = true;
+    }, []);
 
     const updateLocalSearchDebounced = React.useCallback(debounce((query) => {
         localSearch.search(query);
@@ -81,10 +86,10 @@ const SearchBar = React.memo(({ className, query, active }) => {
     }, [currentQuery]);
 
     React.useEffect(() => {
-        if (routeFocused && active) {
+        if (routeFocused && active && autoFocus) {
             searchInputRef.current.focus();
         }
-    }, [routeFocused, active]);
+    }, [routeFocused, active, autoFocus]);
 
     React.useEffect(() => {
         return () => {
@@ -111,7 +116,7 @@ const SearchBar = React.memo(({ className, query, active }) => {
                 onSubmit={queryInputOnSubmit}
                 onClick={openHistory}
             />
-            <Button className={styles['submit-button-container']} onClick={currentQuery.length > 0 ? queryInputClear : undefined}>
+            <Button className={styles['submit-button-container']} onMouseDown={submitButtonOnMouseDown} onClick={currentQuery.length > 0 ? queryInputClear : undefined}>
                 <Icon className={styles['icon']} name={currentQuery.length > 0 ? 'close' : 'search'} />
             </Button>
             {hasDropdown &&
@@ -154,7 +159,8 @@ SearchBar.displayName = 'SearchBar';
 SearchBar.propTypes = {
     className: PropTypes.string,
     query: PropTypes.string,
-    active: PropTypes.bool
+    active: PropTypes.bool,
+    autoFocus: PropTypes.bool,
 };
 
 const SearchIconButton = ({ className }) => (

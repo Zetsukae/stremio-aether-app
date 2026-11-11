@@ -1,0 +1,15 @@
+<!--
+  Merge into gen/android/app/src/main/AndroidManifest.xml after `tauri android init`.
+  Permissions go directly under <manifest>; the rest goes inside <application>.
+-->
+
+<!-- under <manifest> -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<!-- inside <application>, and add android:networkSecurityConfig="@xml/network_security_config" to it -->
+<service
+    android:name="com.stremio.mobile.server.StreamingService"
+    android:exported="false"
+    android:foregroundServiceType="dataSync" />

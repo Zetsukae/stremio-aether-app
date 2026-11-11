@@ -58,12 +58,12 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
     useHorizontalNavGamepadNavigation(route || className, backButton);
 
     React.useEffect(() => {
-        if (route === 'search') {
+        if (route === 'search' && searchBar) {
             openSearch();
         } else {
             closeSearch();
         }
-    }, [route, openSearch, closeSearch]);
+    }, [route, searchBar, openSearch, closeSearch]);
 
     React.useEffect(() => {
         if (!searchClosing) return;
@@ -103,7 +103,7 @@ const HorizontalNavBar = React.memo(({ className, route, query, title, backButto
                             {tabs.map((tab) => (
                                 <Link
                                     key={tab.id}
-                                    className={classnames(styles['button-container'], styles['nav-tab'], { active: tab.id === selected, [styles['hidden-on-mobile']]: tab.hiddenOnMobile })}
+                                    className={classnames(styles['button-container'], styles['nav-tab'], { active: tab.id === selected })}
                                     to={tab.href}
                                     title={t(tab.label)}
                                     tabIndex={-1}
@@ -167,7 +167,6 @@ HorizontalNavBar.propTypes = {
         id: PropTypes.string,
         label: PropTypes.string,
         href: PropTypes.string,
-        hiddenOnMobile: PropTypes.bool,
     })),
     selected: PropTypes.string,
     navbarHidden: PropTypes.bool,

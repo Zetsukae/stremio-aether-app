@@ -6,10 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      service_version:
-        description: 'stremio-service fork tag to build (e.g. v0.1.0-horizon.2)'
+      stream_server_version:
+        description: 'perpetus/stream-server release tag to stage (e.g. v0.1.8)'
         required: true
-        default: 'v0.1.0-horizon.2'
+        default: 'v0.1.8'
 
 permissions:
   contents: write
@@ -68,12 +68,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             arch: x86_64-unknown-linux-gnu
-            service-os: linux
-            ext: ""
+            server-asset: stream-server-linux-amd64
+            server-binary: stream-server
+            ffmpeg-os: linux
+            ffmpeg-files: ffmpeg ffprobe
           - platform: windows-latest
             arch: x86_64-pc-windows-msvc
-            service-os: windows
-            ext: ".exe"
+            server-asset: stream-server-windows-amd64.exe
+            server-binary: stream-server.exe
+            ffmpeg-os: windows
+            ffmpeg-files: ffmpeg.exe ffprobe.exe *.dll
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -92,9 +96,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: |
-            src-tauri
-            ${{ runner.temp }}/stremio-service
+          workspaces: src-tauri
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -109,29 +111,40 @@ jobs:
 
       - run: pnpm install
 
-      - name: Clone stremio-service fork
+      - name: Fetch stream-server
         shell: bash
         run: |
-          rm -rf "$RUNNER_TEMP/stremio-service"
-          git clone --depth 1 --branch "$SERVICE_VERSION" https://github.com/Aqu1tain/stremio-service "$RUNNER_TEMP/stremio-service"
+          set -euo pipefail
+          DOWNLOAD_DIR="$RUNNER_TEMP/stream-server"
+          rm -rf "$DOWNLOAD_DIR"
+          mkdir -p "$DOWNLOAD_DIR" src-tauri/binaries
+          gh release download "$STREAM_SERVER_VERSION" --repo perpetus/stream-server \
+            --pattern "$SERVER_ASSET" --pattern SHA256SUMS.txt --dir "$DOWNLOAD_DIR"
+          (cd "$DOWNLOAD_DIR" && grep " $SERVER_ASSET\$" SHA256SUMS.txt | sha256sum -c -)
+          cp "$DOWNLOAD_DIR/$SERVER_ASSET" "src-tauri/binaries/$SERVER_BINARY"
+          chmod +x "src-tauri/binaries/$SERVER_BINARY"
         env:
-          SERVICE_VERSION: ${{ inputs.service_version || 'v0.1.0-horizon.2' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STREAM_SERVER_VERSION: ${{ inputs.stream_server_version || 'v0.1.8' }}
+          SERVER_ASSET: ${{ matrix.server-asset }}
+          SERVER_BINARY: ${{ matrix.server-binary }}
 
-      - name: Build stremio-service
+      - name: Fetch ffmpeg and ffprobe
         shell: bash
         run: |
-          cd "$RUNNER_TEMP/stremio-service"
-          cargo build --release --features bundled
-
-      - name: Copy stremio-service binaries
-        shell: bash
-        run: |
-          mkdir -p src-tauri/binaries
-          cp "$RUNNER_TEMP/stremio-service/target/release/stremio-service${{ matrix.ext }}" src-tauri/binaries/
-          cp "$RUNNER_TEMP/stremio-service/resources/bin/${{ matrix.service-os }}"/* src-tauri/binaries/
-          echo '{"type":"commonjs"}' > src-tauri/binaries/package.json
-          chmod +x src-tauri/binaries/* 2>/dev/null || true
-          ls -la src-tauri/binaries/
+          set -euo pipefail
+          FORK_DIR="$RUNNER_TEMP/stremio-service"
+          rm -rf "$FORK_DIR"
+          git clone --depth 1 --branch "$FFMPEG_FORK_TAG" --filter=blob:none --sparse \
+            https://github.com/Aqu1tain/stremio-service "$FORK_DIR"
+          git -C "$FORK_DIR" sparse-checkout set "resources/bin/$FFMPEG_OS"
+          cd "$FORK_DIR/resources/bin/$FFMPEG_OS"
+          cp $FFMPEG_FILES "$GITHUB_WORKSPACE/src-tauri/binaries/"
+          ls -la "$GITHUB_WORKSPACE/src-tauri/binaries/"
+        env:
+          FFMPEG_FORK_TAG: v0.1.0-horizon.2
+          FFMPEG_OS: ${{ matrix.ffmpeg-os }}
+          FFMPEG_FILES: ${{ matrix.ffmpeg-files }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0

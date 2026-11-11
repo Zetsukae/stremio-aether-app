@@ -2,7 +2,7 @@
 
 Desktop app for Stremio built with [Tauri](https://tauri.app). Stremio Aether is a fork of [Stremio Horizon](https://github.com/Aqu1tain/stremio-horizon-app), maintained by Zetsukae.
 
-It bundles the Stremio Horizon web UI with a [forked stremio-service](https://github.com/Aqu1tain/stremio-service) for local streaming.
+It bundles the Stremio Horizon web UI with [stream-server](https://github.com/perpetus/stream-server) for local streaming.
 
 > This is not a replacement for [Stremio](https://www.stremio.com). Go star Stremio!
 
@@ -35,7 +35,7 @@ sudo xattr -rd com.apple.quarantine /Applications/Stremio\ Aether.app
 
 ## How it works
 
-Tauri serves the frontend over `localhost` and spawns `stremio-service` as a sidecar process. The forked service has CORS disabled and auto-update removed so it works seamlessly inside the app.
+Tauri serves the frontend over `localhost` and spawns `stream-server --no-tray` as a sidecar process. ffmpeg and ffprobe sit next to it in the app's `binaries/` resource folder.
 
 ## Development
 
@@ -54,17 +54,16 @@ pnpm install
 pnpm --dir web install
 ```
 
-2. Place stremio-service binaries in `src-tauri/binaries/`.
+2. Stage the streaming server and ffmpeg in `src-tauri/binaries/`.
 
-The fork is source-only, so build it at the tag the release workflow uses:
+Download `stream-server-linux-amd64` (Linux) or `stream-server-windows-amd64.exe` (Windows) from the [perpetus/stream-server v0.1.8 release](https://github.com/perpetus/stream-server/releases/tag/v0.1.8), check it against `SHA256SUMS.txt`, and save it as `src-tauri/binaries/stream-server` (or `stream-server.exe`).
 
-```bash
-git clone --branch v0.1.0-horizon.2 https://github.com/Aqu1tain/stremio-service
-cd stremio-service
-cargo build --release --features bundled
-```
+Copy ffmpeg from the [stremio-service fork](https://github.com/Aqu1tain/stremio-service) at `v0.1.0-horizon.2`:
 
-Copy `target/release/stremio-service` and everything in `resources/bin/<os>/` (`server.js`, `stremio-runtime`, `ffmpeg`, `ffprobe`) into `src-tauri/binaries/`.
+- Linux: `resources/bin/linux/ffmpeg` and `ffprobe`
+- Windows: `resources/bin/windows/ffmpeg.exe`, `ffprobe.exe` and every `*.dll` beside them
+
+On Linux, `stream-server` also needs `libtorrent-rasterbar` 2.0 installed (`libtorrent-rasterbar2.0t64` on Ubuntu 24.04, `rb_libtorrent` on Fedora).
 
 3. Run in development mode:
 
@@ -82,7 +81,8 @@ This builds the web UI from `web/` into `dist/`, then packages the app. Output g
 
 ## Related repos
 
-- [stremio-service (fork)](https://github.com/Aqu1tain/stremio-service): streaming backend
+- [stream-server](https://github.com/perpetus/stream-server): streaming backend
+- [stremio-service (fork)](https://github.com/Aqu1tain/stremio-service): source of the bundled ffmpeg and ffprobe
 
 ## Credits
 

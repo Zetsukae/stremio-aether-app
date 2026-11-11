@@ -1,3 +1,5 @@
+@import (reference) '~stremio/common/screen-sizes.less';
+
 .option {
     position: relative;
     width: 100%;
@@ -75,10 +77,29 @@
             border-radius: 3rem;
             border: 2px solid transparent;
             transition: 0.3s all ease-in-out;
-    
+
             &:hover {
                 border-color: var(--overlay-color);
             }
+        }
+    }
+}
+
+@media only screen and (max-width: @minimum) {
+    .option {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+
+        .heading {
+            flex: none;
+        }
+
+        .content {
+            flex: none;
+            min-width: 0;
+            width: 100%;
+            justify-content: flex-start;
         }
     }
 }

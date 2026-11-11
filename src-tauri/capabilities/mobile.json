@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "android-streaming",
+  "description": "Start and stop the Android streaming foreground service",
+  "windows": ["main"],
+  "platforms": ["android"],
+  "permissions": ["streaming:default"]
+}

@@ -1,17 +1,17 @@
 use std::path::PathBuf;
+use tauri_build::{Attributes, DefaultPermissionRule, InlinedPlugin};
 
-const COMPANIONS: &[&str] = &[
-    "stremio-service",
-    "server.js",
-    "stremio-runtime",
-    "ffmpeg",
-    "ffprobe",
-    "package.json",
-];
+const COMPANIONS: &[&str] = &["stream-server", "ffmpeg", "ffprobe"];
 
 fn main() {
     copy_companions_to_target();
-    tauri_build::build();
+
+    let streaming = InlinedPlugin::new()
+        .commands(&["start", "stop"])
+        .default_permission(DefaultPermissionRule::AllowAllCommands);
+
+    tauri_build::try_build(Attributes::new().plugin("streaming", streaming))
+        .expect("failed to run tauri-build");
 }
 
 fn copy_companions_to_target() {

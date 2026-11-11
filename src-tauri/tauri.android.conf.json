@@ -1,0 +1,14 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Stremio Aether",
+        "url": "index.html"
+      }
+    ]
+  },
+  "bundle": {
+    "resources": []
+  }
+}

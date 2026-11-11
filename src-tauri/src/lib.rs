@@ -14,6 +14,7 @@ mod debug;
 mod discord;
 mod downloads;
 mod proxy_security;
+mod streaming;
 mod updater;
 mod vlc;
 
@@ -21,6 +22,7 @@ pub use updater::{snapshot_pending, UpdateState};
 
 pub(crate) const PORT: u16 = 11480;
 pub(crate) const SERVICE_PORT: u16 = 11470;
+const SERVER_BIN: &str = "stream-server";
 const SERVICE_TIMEOUT: Duration = Duration::from_secs(15);
 const POLL_INTERVAL: Duration = Duration::from_millis(200);
 const EXT_POOL_SIZE: usize = 8;
@@ -129,6 +131,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(streaming::init())
         .manage(Mutex::new(chromecast::CastManagerState::default()))
         .manage(updater::SharedUpdateState::default())
         .manage(discord::DiscordManager::default())
@@ -169,24 +172,11 @@ pub fn run() {
         ])
         .setup(|app| {
             downloads::initialize(app)?;
-            start_local_server(app);
 
-            let service = spawn_streaming_service(app);
-            let spawned = service.is_some();
-            *app.state::<ServiceState>().lock().unwrap() = service;
+            #[cfg(desktop)]
+            start_desktop(app)?;
 
-            let ready = wait_for_service();
-            create_window(app)?;
             downloads::resume_pending(app.handle());
-
-            if !spawned || !ready {
-                warn_service_failed(app);
-            }
-
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                updater::check_for_updates(handle).await;
-            });
 
             Ok(())
         })
@@ -201,6 +191,29 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(desktop)]
+fn start_desktop(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    start_local_server(app);
+
+    let service = spawn_streaming_service(app);
+    let spawned = service.is_some();
+    *app.state::<ServiceState>().lock().unwrap() = service;
+
+    let ready = wait_for_service();
+    create_window(app)?;
+
+    if !spawned || !ready {
+        warn_service_failed(app);
+    }
+
+    let handle = app.handle().clone();
+    tauri::async_runtime::spawn(async move {
+        updater::check_for_updates(handle).await;
+    });
+
+    Ok(())
 }
 
 fn wait_for_service() -> bool {
@@ -543,16 +556,12 @@ fn forward_response(request: tiny_http::Request, resp: ureq::Response) {
 
 fn spawn_streaming_service(app: &tauri::App) -> Option<ServiceProcess> {
     let Some(dir) = find_binaries_dir(app) else {
-        eprintln!("stremio binaries directory not found");
+        eprintln!("stream-server binaries directory not found");
         return None;
     };
 
-    let mut cmd = Command::new(dir.join(bin_name("stremio-runtime")));
-    cmd.arg(dir.join("server.js"))
-        .env("NO_CORS", "1")
-        .env("FFMPEG_BIN", dir.join(bin_name("ffmpeg")))
-        .env("FFPROBE_BIN", dir.join(bin_name("ffprobe")))
-        .current_dir(&dir);
+    let mut cmd = Command::new(dir.join(bin_name(SERVER_BIN)));
+    cmd.arg("--no-tray").current_dir(&dir);
 
     #[cfg(target_os = "windows")]
     {
@@ -562,7 +571,7 @@ fn spawn_streaming_service(app: &tauri::App) -> Option<ServiceProcess> {
 
     match cmd.spawn() {
         Ok(child) => {
-            println!("server.js started from {}", dir.display());
+            println!("stream-server started from {}", dir.display());
 
             #[cfg(target_os = "windows")]
             let _job = windows_job::assign_child_to_kill_on_close_job(&child);
@@ -578,7 +587,7 @@ fn spawn_streaming_service(app: &tauri::App) -> Option<ServiceProcess> {
             })
         }
         Err(e) => {
-            eprintln!("server.js failed to start: {e}");
+            eprintln!("stream-server failed to start: {e}");
             None
         }
     }
@@ -615,7 +624,7 @@ fn find_binaries_dir(app: &tauri::App) -> Option<PathBuf> {
     ]
     .into_iter()
     .flatten()
-    .find(|d| d.join("server.js").exists())
+    .find(|d| d.join(bin_name(SERVER_BIN)).exists())
 }
 
 fn bin_name(name: &str) -> String {

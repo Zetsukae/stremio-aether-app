@@ -22,6 +22,7 @@ const App = require('./App');
 const { CoreProvider } = require('./core');
 const { FileDropProvider, PlatformProvider } = require('./common');
 const { applyNoAnimations, isNoAnimationsEnabled } = require('./common/reduceMotion');
+const { startAndroidStreamingService } = require('./common/streamingService');
 
 applyNoAnimations(isNoAnimationsEnabled());
 
@@ -62,6 +63,10 @@ root.render(
         </PlatformProvider>
     </React.StrictMode>
 );
+
+startAndroidStreamingService().catch((error) => {
+    console.error('Failed to start the streaming service', error);
+});
 
 if (process.env.NODE_ENV === 'production' && process.env.SERVICE_WORKER_DISABLED !== 'true' && process.env.SERVICE_WORKER_DISABLED !== true && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
