@@ -45,6 +45,7 @@ module.exports = {
         HORIZON_CLOSE_BUTTON_CENTER: 'Center',
         HORIZON_CLOSE_BUTTON_RIGHT: 'Right',
         HORIZON_NO_ANIMATIONS: 'No animations',
+        HORIZON_PRIMARY_SUBTITLE_LANGUAGE: 'Primary subtitle language',
     },
     'fr-FR': {
         DOWNLOADS: 'Téléchargements',
@@ -106,6 +107,7 @@ module.exports = {
         HORIZON_CLOSE_BUTTON_CENTER: 'Centre',
         HORIZON_CLOSE_BUTTON_RIGHT: 'Droite',
         HORIZON_NO_ANIMATIONS: 'Aucune animation',
+        HORIZON_PRIMARY_SUBTITLE_LANGUAGE: 'Langue principale des sous-titres',
         SETTINGS_DISCORD: 'Afficher l’activité de visionnage sur Discord',
     },
 };

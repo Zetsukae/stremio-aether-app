@@ -63,6 +63,14 @@ Copy ffmpeg from the [stremio-service fork](https://github.com/Aqu1tain/stremio-
 - Linux: `resources/bin/linux/ffmpeg` and `ffprobe`
 - Windows: `resources/bin/windows/ffmpeg.exe`, `ffprobe.exe` and every `*.dll` beside them
 
+Before packaging on Windows, hide the FFmpeg console windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/hide-windows-console.ps1 `
+  src-tauri/binaries/ffmpeg.exe `
+  src-tauri/binaries/ffprobe.exe
+```
+
 On Linux, `stream-server` also needs `libtorrent-rasterbar` 2.0 installed (`libtorrent-rasterbar2.0t64` on Ubuntu 24.04, `rb_libtorrent` on Fedora).
 
 3. Run in development mode:

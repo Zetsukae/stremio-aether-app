@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::{mpsc, Mutex};
 use std::thread;
@@ -560,8 +560,18 @@ fn spawn_streaming_service(app: &tauri::App) -> Option<ServiceProcess> {
         return None;
     };
 
+    let path = match path_with_binaries_dir(&dir, std::env::var_os("PATH")) {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("failed to prepare streaming service PATH: {error}");
+            return None;
+        }
+    };
+
     let mut cmd = Command::new(dir.join(bin_name(SERVER_BIN)));
-    cmd.arg("--no-tray").current_dir(&dir);
+    cmd.arg("--no-tray")
+        .current_dir(&dir)
+        .env("PATH", path);
 
     #[cfg(target_os = "windows")]
     {
@@ -591,6 +601,16 @@ fn spawn_streaming_service(app: &tauri::App) -> Option<ServiceProcess> {
             None
         }
     }
+}
+
+fn path_with_binaries_dir(
+    dir: &Path,
+    current_path: Option<std::ffi::OsString>,
+) -> Result<std::ffi::OsString, std::env::JoinPathsError> {
+    let current_path = current_path.unwrap_or_default();
+    std::env::join_paths(
+        std::iter::once(dir.to_path_buf()).chain(std::env::split_paths(&current_path)),
+    )
 }
 
 fn warn_service_failed(app: &tauri::App) {
@@ -629,4 +649,23 @@ fn find_binaries_dir(app: &tauri::App) -> Option<PathBuf> {
 
 fn bin_name(name: &str) -> String {
     if cfg!(windows) { format!("{name}.exe") } else { name.into() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bundled_binaries_directory_precedes_existing_path_entries() {
+        let bundled_dir = PathBuf::from("bundled");
+        let existing_path = std::env::join_paths(["first", "second"]).unwrap();
+
+        let path = path_with_binaries_dir(&bundled_dir, Some(existing_path)).unwrap();
+        let entries = std::env::split_paths(&path).collect::<Vec<_>>();
+
+        assert_eq!(
+            entries,
+            vec![bundled_dir, PathBuf::from("first"), PathBuf::from("second")]
+        );
+    }
 }

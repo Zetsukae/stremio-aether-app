@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCore } from 'stremio/core';
-import { interfaceLanguages, useLanguageSorting } from 'stremio/common';
+import { interfaceLanguages, languageNames, useLanguageSorting } from 'stremio/common';
 import { CloseButtonPosition, setTitlebarCloseButton, setTitlebarEnabled, useTitlebarSettings } from 'stremio/common/titlebar';
 import { isNoAnimationsEnabled, setNoAnimations } from 'stremio/common/reduceMotion';
 
@@ -19,6 +19,15 @@ const useInterfaceOptions = (profile: Profile) => {
     []);
 
     const { sortedOptions } = useLanguageSorting(interfaceLanguageOptions);
+
+    const primarySubtitleLanguageOptions = useMemo(() =>
+        Object.keys(languageNames).map((code) => ({
+            value: code,
+            label: languageNames[code],
+        })),
+    []);
+
+    const { sortedOptions: sortedPrimarySubtitleLanguageOptions } = useLanguageSorting(primarySubtitleLanguageOptions);
 
     const interfaceLanguageSelect = useMemo(() => ({
         options: sortedOptions,
@@ -38,6 +47,23 @@ const useInterfaceOptions = (profile: Profile) => {
             });
         }
     }), [profile.settings, sortedOptions]);
+
+    const primarySubtitleLanguageSelect = useMemo(() => ({
+        options: sortedPrimarySubtitleLanguageOptions,
+        value: profile.settings.primarySubtitleLanguage || profile.settings.subtitlesLanguage || 'eng',
+        onSelect: (value: string) => {
+            core.transport.dispatch({
+                action: 'Ctx',
+                args: {
+                    action: 'UpdateSettings',
+                    args: {
+                        ...profile.settings,
+                        primarySubtitleLanguage: value
+                    }
+                }
+            });
+        }
+    }), [profile.settings, sortedPrimarySubtitleLanguageOptions]);
 
     const escExitFullscreenToggle = useMemo(() => ({
         checked: profile.settings.escExitFullscreen,
@@ -136,6 +162,7 @@ const useInterfaceOptions = (profile: Profile) => {
 
     return {
         interfaceLanguageSelect,
+        primarySubtitleLanguageSelect,
         escExitFullscreenToggle,
         quitOnCloseToggle,
         hideSpoilersToggle,

@@ -14,6 +14,7 @@ const Interface = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) =>
 
     const {
         interfaceLanguageSelect,
+        primarySubtitleLanguageSelect,
         quitOnCloseToggle,
         escExitFullscreenToggle,
         hideSpoilersToggle,
@@ -29,6 +30,12 @@ const Interface = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) =>
                 <MultiselectMenu
                     className={'multiselect'}
                     {...interfaceLanguageSelect}
+                />
+            </Option>
+            <Option label={'HORIZON_PRIMARY_SUBTITLE_LANGUAGE'}>
+                <MultiselectMenu
+                    className={'multiselect'}
+                    {...primarySubtitleLanguageSelect}
                 />
             </Option>
             {

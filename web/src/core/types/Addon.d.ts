@@ -7,6 +7,11 @@ type AddonManifest = {
     logo: string,
     background: string,
     types: string[],
+    resources?: (string | {
+        name: string,
+        types?: string[],
+        idPrefixes?: string[],
+    })[],
 };
 
 type Addon = {

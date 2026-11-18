@@ -146,6 +146,14 @@ jobs:
           FFMPEG_OS: ${{ matrix.ffmpeg-os }}
           FFMPEG_FILES: ${{ matrix.ffmpeg-files }}
 
+      - name: Hide FFmpeg console windows
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          pwsh -File scripts/hide-windows-console.ps1 `
+            src-tauri/binaries/ffmpeg.exe `
+            src-tauri/binaries/ffprobe.exe
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:

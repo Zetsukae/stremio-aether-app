@@ -15,6 +15,8 @@ const getStreamsListStatus = require('./getStreamsListStatus');
 const styles = require('./styles');
 const { usePlatform, useProfile } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
+const useEpisodeSubtitles = require('./useEpisodeSubtitles');
+const { subtitlesForStream } = require('./subtitleAddons');
 
 const ALL_ADDONS_KEY = 'ALL';
 
@@ -80,6 +82,7 @@ const StreamsList = ({ className, video, contentId, contentTitle, contentDescrip
                 :
                 [];
     }, [streamsByAddon, selectedAddon]);
+    const subtitlesByStream = useEpisodeSubtitles(type, video?.id, filteredStreams);
     const selectableOptions = React.useMemo(() => {
         return {
             options: [
@@ -249,6 +252,8 @@ const StreamsList = ({ className, video, contentId, contentTitle, contentDescrip
                                             addonName={stream.addonName}
                                             name={stream.name}
                                             description={stream.description}
+                                            subtitles={(Array.isArray(stream.subtitles) ? stream.subtitles : []).concat(subtitlesForStream(stream, subtitlesByStream))}
+                                            primarySubtitleLanguage={profile?.settings?.primarySubtitleLanguage || profile?.settings?.subtitlesLanguage || 'eng'}
                                             thumbnail={stream.thumbnail}
                                             progress={stream.progress}
                                             deepLinks={stream.deepLinks}

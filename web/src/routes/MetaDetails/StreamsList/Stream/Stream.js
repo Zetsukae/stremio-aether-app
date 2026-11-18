@@ -10,12 +10,13 @@ const { useProfile, usePlatform, useToast, useBinaryState } = require('stremio/c
 const { Button, Image, Popup } = require('stremio/components');
 const { default: useRouteFocused } = require('stremio/common/useRouteFocused');
 const { default: parseStreamBadges } = require('stremio/common/parseStreamBadges');
+const { default: parseSubtitleLanguages } = require('stremio/common/parseSubtitleLanguages');
 const { downloadsAvailable, startDownload } = require('stremio/lib/downloads');
 const { isTauri } = require('stremio/common/tauri');
 const StreamPlaceholder = require('./StreamPlaceholder');
 const styles = require('./styles');
 
-const Stream = ({ className, videoId, videoReleased, videoTitle, videoSeason, videoEpisode, contentId, contentType, contentTitle, contentDescription, contentThumbnail, addonName, name, description, thumbnail, progress, deepLinks, ...props }) => {
+const Stream = ({ className, videoId, videoReleased, videoTitle, videoSeason, videoEpisode, contentId, contentType, contentTitle, contentDescription, contentThumbnail, addonName, name, description, subtitles, primarySubtitleLanguage, thumbnail, progress, deepLinks, ...props }) => {
     const profile = useProfile();
     const toast = useToast();
     const platform = usePlatform();
@@ -255,6 +256,7 @@ const Stream = ({ className, videoId, videoReleased, videoTitle, videoSeason, vi
     }, [streamLink]);
 
     const badges = React.useMemo(() => parseStreamBadges(name, description), [name, description]);
+    const subtitleLanguages = React.useMemo(() => parseSubtitleLanguages(subtitles, primarySubtitleLanguage), [subtitles, primarySubtitleLanguage]);
 
     const renderThumbnailFallback = React.useCallback(() => (
         <Icon className={styles['placeholder-icon']} name={'ic_broken_link'} />
@@ -299,6 +301,16 @@ const Stream = ({ className, videoId, videoReleased, videoTitle, videoSeason, vi
                         :
                         null
                 }
+                {
+                    subtitleLanguages.length > 0 ?
+                        <div className={styles['quality-badges']} aria-label={`Subtitles: ${subtitleLanguages.map(({ label }) => label).join(', ')}`}>
+                            {subtitleLanguages.map(({ code, label, flag }) => (
+                                <span key={code} className={styles['quality-badge']} style={{ backgroundColor: '#7c3aed' }} title={label} aria-label={label}>{flag}</span>
+                            ))}
+                        </div>
+                        :
+                        null
+                }
                 <div className={styles['description-container']} title={description}>{description}</div>
                 <div className={styles['more-button']} onClick={onMoreClick}>
                     <Icon className={styles['more-icon']} name={'more-vertical'} />
@@ -307,7 +319,7 @@ const Stream = ({ className, videoId, videoReleased, videoTitle, videoSeason, vi
                 {children}
             </Button>
         );
-    }, [thumbnail, progress, addonName, name, description, href, target, download, onClick, expanded, toggleExpanded, onMoreClick]);
+    }, [thumbnail, progress, addonName, name, description, subtitleLanguages, href, target, download, onClick, expanded, toggleExpanded, onMoreClick]);
 
     const renderMenu = React.useMemo(() => function renderMenu() {
         return (
@@ -388,6 +400,10 @@ Stream.propTypes = {
     addonName: PropTypes.string,
     name: PropTypes.string,
     description: PropTypes.string,
+    subtitles: PropTypes.arrayOf(PropTypes.shape({
+        lang: PropTypes.string
+    })),
+    primarySubtitleLanguage: PropTypes.string,
     thumbnail: PropTypes.string,
     progress: PropTypes.number,
     deepLinks: PropTypes.shape({
